@@ -1,0 +1,30 @@
+const env = require("./env");
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "https://example.com",
+];
+
+module.exports = {
+  name: env.APP_NAME,
+  env: env.NODE_ENV,
+  port: env.PORT,
+  serviceStatus: "online",
+  apiVersion: "v1",
+  version: "1.0.0",
+  commitHash: "wros-dev-build",
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    credentials: true,
+  },
+};
