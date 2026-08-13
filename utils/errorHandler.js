@@ -1,4 +1,5 @@
 const { sendError } = require("./response");
+const config = require("../config");
 
 const errorHandler = (err, req, res, next) => {
   console.error("Unhandled error:", err);
@@ -8,7 +9,8 @@ const errorHandler = (err, req, res, next) => {
   }
 
   const statusCode = err.statusCode || 500;
-  const message = err.message || "Internal server error";
+  const isProduction = config.NODE_ENV === "production";
+  const message = isProduction && statusCode >= 500 ? "Internal server error" : err.message || "Internal server error";
 
   sendError(res, message, statusCode, {
     path: req.originalUrl,

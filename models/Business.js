@@ -7,10 +7,15 @@ const businessSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     phone: { type: String, default: "", trim: true },
     whatsappNumber: { type: String, default: "", trim: true },
-    subscriptionPlan: { type: String, default: "starter" },
+    channelIdentifiers: { type: Map, of: String, default: {} },
+    settings: { type: mongoose.Schema.Types.Mixed, default: {} },
+    subscriptionPlan: { type: String, enum: ["starter", "growth", "pro"], default: "starter" },
     stripeCustomerId: { type: String, default: "" },
     subscriptionStatus: { type: String, default: "trial" },
     status: { type: String, default: "active" },
+    licenseToken: { type: String, default: "" },
+    messageCount: { type: Number, default: 0 },
+    messageRateCents: { type: Number, default: 5 },
   },
   { timestamps: true }
 );

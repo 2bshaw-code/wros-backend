@@ -2,10 +2,16 @@ const env = require("./env");
 
 const allowedOrigins = [
   "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "https://example.com",
-];
+  env.CONSOLE_URL,
+  env.FRONTEND_URL,
+].map((value) => {
+  try { return new URL(value).origin; } catch { return value; }
+});
 
 module.exports = {
   name: env.APP_NAME,
@@ -24,7 +30,8 @@ module.exports = {
       callback(new Error("Not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Refresh-Token", "X-WROS-Client", "X-WROS-Tenant"],
+    exposedHeaders: ["x-refresh-token"],
     credentials: true,
   },
 };

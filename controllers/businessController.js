@@ -17,7 +17,7 @@ const register = async (req, res) => {
 
 const connectBusinessWhatsapp = async (req, res) => {
   try {
-    const business = await connectWhatsapp(req.body || {});
+    const business = await connectWhatsapp(req.tenantId, req.body || {});
     sendSuccess(res, business, 200);
   } catch (error) {
     sendError(res, error.message, 400);
@@ -26,7 +26,7 @@ const connectBusinessWhatsapp = async (req, res) => {
 
 const getSettings = async (req, res) => {
   try {
-    const business = await getBusinessSettings();
+    const business = await getBusinessSettings(req.tenantId);
     sendSuccess(res, business, 200);
   } catch (error) {
     sendError(res, error.message, 404);
@@ -35,7 +35,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
-    const business = await updateBusinessSettings(req.body || {});
+    const business = await updateBusinessSettings(req.tenantId, req.body || {});
     sendSuccess(res, business, 200);
   } catch (error) {
     sendError(res, error.message, 400);

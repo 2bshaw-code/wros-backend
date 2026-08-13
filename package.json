@@ -4,19 +4,27 @@
   "description": "Backend service for wros",
   "main": "server.js",
   "scripts": {
+    "migrate:tenants": "node scripts/migrate-tenants.js",
+    "validate:production-env": "node scripts/validate-production-env.js",
+    "dev": "nodemon server.js",
     "start": "node server.js"
   },
   "private": true,
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
+    "google-tts-api": "^2.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.5.0",
     "mongoose": "^9.9.2",
     "morgan": "^1.11.0",
+    "multer": "^2.2.0",
     "stripe": "^22.5.0"
   }
 }

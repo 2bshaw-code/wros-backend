@@ -1,7 +1,7 @@
 const Business = require("../models/Business");
 
-const getBusiness = async () => {
-  const business = await Business.findOne({}).sort({ createdAt: -1 });
+const getBusiness = async (tenantId) => {
+  const business = await Business.findById(tenantId);
   return business;
 };
 
@@ -28,17 +28,14 @@ const registerBusiness = async (payload = {}) => {
   return business;
 };
 
-const connectWhatsapp = async (payload = {}) => {
+const connectWhatsapp = async (tenantId, payload = {}) => {
   const { whatsappNumber } = payload;
   if (!whatsappNumber) {
     throw new Error("whatsappNumber is required");
   }
 
-  const business = (await getBusiness()) || (await Business.create({
-    ownerName: "Business Owner",
-    businessName: "WROS Business",
-    email: "business@wros.local",
-  }));
+  const business = await getBusiness(tenantId);
+  if (!business) throw new Error("Tenant not found");
 
   business.whatsappNumber = whatsappNumber;
   await business.save();
@@ -46,16 +43,16 @@ const connectWhatsapp = async (payload = {}) => {
   return business;
 };
 
-const getBusinessSettings = async () => {
-  const business = await getBusiness();
+const getBusinessSettings = async (tenantId) => {
+  const business = await getBusiness(tenantId);
   if (!business) {
     throw new Error("No business profile found");
   }
   return business;
 };
 
-const updateBusinessSettings = async (payload = {}) => {
-  const business = await getBusiness();
+const updateBusinessSettings = async (tenantId, payload = {}) => {
+  const business = await getBusiness(tenantId);
   if (!business) {
     throw new Error("No business profile found");
   }

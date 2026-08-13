@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
 const { sendError } = require("../utils/response");
+const config = require("../config");
 
-const JWT_SECRET = process.env.JWT_SECRET || "wros-dev-secret";
+const JWT_SECRET = config.JWT_SECRET;
 
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -14,6 +15,10 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    const requestedTenant = req.headers["x-wros-tenant"];
+    if (requestedTenant && decoded.tenantId && String(requestedTenant) !== String(decoded.tenantId)) {
+      return sendError(res, "Tenant context does not match the authenticated session", 403);
+    }
     req.user = decoded;
     return next();
   } catch (error) {

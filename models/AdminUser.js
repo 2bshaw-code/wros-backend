@@ -13,10 +13,22 @@ const adminUserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    founder: {
+      type: Boolean,
+      default: false,
+    },
     role: {
       type: String,
-      enum: ["admin", "manager"],
-      default: "admin",
+      enum: ["user", "admin", "manager", "customer"],
+      default: "user",
+    },
+    refreshTokenHash: {
+      type: String,
+      default: "",
+    },
+    refreshTokenId: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }
