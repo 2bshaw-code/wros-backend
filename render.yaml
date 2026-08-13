@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: wros-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGO_URI_PROD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ID
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: HOSTING_URL
+        sync: false
+      - key: CONSOLE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: CRM_ENABLED
+        value: true
+      - key: ORDERS_ENABLED
+        value: true
+      - key: INVOICES_ENABLED
+        value: true
+      - key: DELIVERY_ENABLED
+        value: true
+      - key: FAULTS_ENABLED
+        value: true
+      - key: DOWNLOADS_ENABLED
+        value: true
+      - key: LDM_ENABLED
+        value: true
+      - key: WHATSAPP_RIDER_MODE
+        value: true

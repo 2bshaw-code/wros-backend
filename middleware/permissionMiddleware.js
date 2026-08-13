@@ -1,4 +1,4 @@
-const { hasPermission } = require("../../security/permissions");
+const { hasPermission } = require("../security/permissions");
 const { sendError } = require("../utils/response");
 
 const requirePermission = (permission) => (req, res, next) => {
