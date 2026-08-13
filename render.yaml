@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: wros-backend
+    runtime: node
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGO_URI_PROD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_BUSINESS_ID
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: HOSTING_URL
+        value: https://www.wros.co.uk
+      - key: CONSOLE_URL
+        value: https://console.wros.co.uk/console
+      - key: FRONTEND_URL
+        value: https://console.wros.co.uk/console
+      - key: API_URL
+        value: https://api.wros.co.uk/api
+      - key: CRM_ENABLED
+        value: "true"
+      - key: ORDERS_ENABLED
+        value: "true"
+      - key: INVOICES_ENABLED
+        value: "true"
+      - key: DELIVERY_ENABLED
+        value: "true"
+      - key: FAULTS_ENABLED
+        value: "true"
+      - key: DOWNLOADS_ENABLED
+        value: "true"

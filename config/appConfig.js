@@ -6,10 +6,10 @@ const allowedOrigins = [
   "http://localhost:3002",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
-  "https://example.com",
+  env.HOSTING_URL,
   env.CONSOLE_URL,
   env.FRONTEND_URL,
-].map((value) => {
+].filter(Boolean).map((value) => {
   try { return new URL(value).origin; } catch { return value; }
 });
 
