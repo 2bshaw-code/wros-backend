@@ -1,7 +1,7 @@
-const { aiRoute } = require("../ai/router");
+const { askBob } = require("./services/aiService");
 
 function wrosAI(content = "", userId = "legacy-user") {
-  return aiRoute(userId, { content: String(content) }).response;
+  return askBob({ prompt: String(content), userId }).then((r) => r.reply).catch(() => "");
 }
 
 module.exports = { wrosAI };
