@@ -9,7 +9,12 @@ const frozen = Object.freeze({
 });
 
 const assertStability = (config) => {
-  if (Number(config.PORT) !== frozen.backendPort) throw new Error(`WROS backend port drifted from ${frozen.backendPort}`);
+  const isProductionRuntime = Boolean(process.env.PORT || process.env.RENDER);
+
+  if (!isProductionRuntime && Number(config.PORT) !== frozen.backendPort) {
+    throw new Error(`WROS backend port drifted from ${frozen.backendPort}`);
+  }
+
   return frozen;
 };
 
