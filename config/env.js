@@ -1,4 +1,12 @@
-const requiredEnv = ["JWT_SECRET", "JWT_REFRESH_SECRET", "MONGO_URI_PROD", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "WHATSAPP_VERIFY_TOKEN", "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_BUSINESS_ID", "HOSTING_URL", "CONSOLE_URL", "FRONTEND_URL", "API_URL"];
+const coreRequired = ["JWT_SECRET", "JWT_REFRESH_SECRET", "MONGO_URI_PROD", "HOSTING_URL", "CONSOLE_URL", "API_URL"];
+const stripeRequired = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"];
+const whatsappRequired = ["WHATSAPP_VERIFY_TOKEN", "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_BUSINESS_ID"];
+const isEnabled = (value, fallback = false) => String(value ?? fallback).toLowerCase() === "true";
+const ENABLE_STRIPE = isEnabled(process.env.ENABLE_STRIPE, false);
+const ENABLE_WHATSAPP = isEnabled(process.env.ENABLE_WHATSAPP, false);
+const requiredEnv = [...coreRequired, ...(ENABLE_STRIPE ? stripeRequired : []), ...(ENABLE_WHATSAPP ? whatsappRequired : [])];
+const features = { stripe: ENABLE_STRIPE, whatsapp: ENABLE_WHATSAPP };
+const requiredProduction = [...requiredEnv];
 
 const missing = requiredEnv.filter((key) => !process.env[key]);
 
@@ -7,7 +15,6 @@ if (missing.length > 0) {
 }
 
 const NODE_ENV = process.env.NODE_ENV || "development";
-const isEnabled = (value, fallback = false) => String(value ?? fallback).toLowerCase() === "true";
 
 if (NODE_ENV === "production") {
   const missingProduction = requiredEnv.filter((key) => !process.env[key]);
@@ -42,4 +49,9 @@ module.exports = {
   DOWNLOADS_ENABLED: isEnabled(process.env.DOWNLOADS_ENABLED, true),
   LDM_ENABLED: isEnabled(process.env.LDM_ENABLED, true),
   WHATSAPP_RIDER_MODE: isEnabled(process.env.WHATSAPP_RIDER_MODE, true),
+  WROS_TEST_MODE: isEnabled(process.env.WROS_TEST_MODE, false),
+  ENABLE_STRIPE,
+  ENABLE_WHATSAPP,
+  features,
+  requiredProduction,
 };
