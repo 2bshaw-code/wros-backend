@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const { notifyOnce } = require("./notificationService");
 
 const ORDER_FILTER_FIELDS = ["status", "customerId"];
 
@@ -7,7 +8,9 @@ const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$
 const createOrder = async (tenantId, payload) => {
   try {
     const order = new Order({ ...payload, tenantId });
-    return await order.save();
+    const saved = await order.save();
+    await notifyOnce({ tenantId, type: "new_order", entityId: saved._id, message: `New order ${saved.orderNumber} created` });
+    return saved;
   } catch (error) {
     throw new Error(`Failed to create order: ${error.message}`);
   }

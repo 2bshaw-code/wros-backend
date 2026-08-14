@@ -1,0 +1,8 @@
+const { sendError } = require("../utils/response");
+
+const founderMiddleware = (req, res, next) => {
+  if (!req.user?.founder && req.user?.role !== "founder_admin" && req.user?.operatorRole !== "founder_admin") return sendError(res, "Founder access required", 403);
+  return next();
+};
+
+module.exports = { founderMiddleware };

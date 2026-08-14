@@ -1,0 +1,11 @@
+const express = require("express");
+const { authMiddleware } = require("../middleware/authMiddleware");
+const { requireTenant } = require("../middleware/tenantMiddleware");
+const { requirePermission } = require("../middleware/permissionMiddleware");
+const { list, create, assign } = require("../controllers/categoryController");
+const router = express.Router();
+router.use(authMiddleware, requireTenant);
+router.get("/categories", requirePermission("read"), list);
+router.post("/categories", requirePermission("write"), create);
+router.post("/categories/assign", requirePermission("write"), assign);
+module.exports = router;

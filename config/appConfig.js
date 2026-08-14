@@ -8,6 +8,7 @@ const allowedOrigins = [
   "http://127.0.0.1:3000",
   "https://example.com",
   env.CONSOLE_URL,
+  env.HOSTING_URL,
   env.FRONTEND_URL,
 ].map((value) => {
   try { return new URL(value).origin; } catch { return value; }

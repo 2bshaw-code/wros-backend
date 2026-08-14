@@ -5,7 +5,7 @@ const AdminUser = require("../models/AdminUser");
 const Business = require("../models/Business");
 const config = require("../config");
 const { getPlan } = require("./billingService");
-const { getRolePermissions } = require("../../security/permissions");
+const { getRolePermissions } = require("../security/permissions");
 
 const JWT_SECRET = config.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = config.REFRESH_TOKEN_SECRET;
@@ -118,6 +118,7 @@ const loginConsoleOperator = async ({ email, password }) => {
     ...toUser(user),
     tenantId: merchant.tenantId,
     businessId: merchant.businessId,
+    founder: Boolean(user.founder),
     operatorRole,
     plan,
     permissions,

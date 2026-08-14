@@ -1,17 +1,19 @@
 const Product = require("../models/Product");
+const { notifyOnce } = require("./notificationService");
 const { sendError } = require("../utils/response");
 
 const PRODUCT_FILTER_FIELDS = ["category", "sku", "supplier"];
 
 const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const getProducts = async (tenantId, { page = 1, limit = 20, search = "", category = "", filter = "" } = {}) => {
+const getProducts = async (tenantId, { page = 1, limit = 20, search = "", category = "", supplier = "", filter = "", stockMin = "", stockMax = "", priceMin = "", priceMax = "" } = {}) => {
   try {
     const query = { tenantId };
 
     if (category) {
       query.category = category;
     }
+    if (supplier) query.supplier = { $regex: escapeRegex(supplier), $options: "i" };
 
     if (filter) {
       const [field, value] = String(filter).split(":");
@@ -23,6 +25,14 @@ const getProducts = async (tenantId, { page = 1, limit = 20, search = "", catego
     if (search) {
       query.name = { $regex: escapeRegex(search), $options: "i" };
     }
+    const stock = {};
+    const price = {};
+    if (stockMin !== "" && Number.isFinite(Number(stockMin))) stock.$gte = Number(stockMin);
+    if (stockMax !== "" && Number.isFinite(Number(stockMax))) stock.$lte = Number(stockMax);
+    if (priceMin !== "" && Number.isFinite(Number(priceMin))) price.$gte = Number(priceMin);
+    if (priceMax !== "" && Number.isFinite(Number(priceMax))) price.$lte = Number(priceMax);
+    if (Object.keys(stock).length) query.stock = stock;
+    if (Object.keys(price).length) query.price = price;
 
     const safeLimit = Math.max(Number(limit) || 20, 1);
     const safePage = Math.max(Number(page) || 1, 1);
@@ -64,6 +74,19 @@ const updateProduct = async (tenantId, id, payload) => {
   }
 };
 
+const adjustStock = async (tenantId, id, adjustment, threshold = 5) => {
+  const product = await Product.findOne({ _id: id, tenantId });
+  if (!product) throw new Error("Product not found");
+  const amount = Number(adjustment);
+  if (!Number.isInteger(amount) || amount === 0) throw new Error("Stock adjustment must be a non-zero integer");
+  const nextStock = product.stock + amount;
+  if (nextStock < 0) throw new Error("Stock cannot be negative");
+  product.stock = nextStock;
+  await product.save();
+  if (nextStock < Number(threshold)) await notifyOnce({ tenantId, type: "low_stock", entityId: product._id, message: `${product.name} is below the low-stock threshold` });
+  return product;
+};
+
 const deleteProduct = async (tenantId, id) => {
   try {
     const deleted = await Product.findOneAndDelete({ _id: id, tenantId });
@@ -82,4 +105,5 @@ module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
+  adjustStock,
 };

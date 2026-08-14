@@ -1,8 +1,14 @@
 const express = require("express");
 const path = require("path");
+const dotenv = require("dotenv");
+
+dotenv.config({ path: process.env.DOTENV_CONFIG_PATH ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH) : path.join(__dirname, ".env") });
+
 const cors = require("cors");
 const morgan = require("morgan");
 const config = require("./config");
+const { assertStability } = require("./config/stability");
+assertStability(config);
 const { connectMongo } = require("./config/mongo");
 const { rateLimiter } = require("./middleware/rateLimiter");
 const authRoutes = require("./routes/authRoutes");
@@ -17,6 +23,8 @@ const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const downloadRoutes = require("./routes/downloadRoutes");
 const faultRoutes = require("./routes/faultRoutes");
 const crmRoutes = require("./routes/crmRoutes");
@@ -24,6 +32,10 @@ const invoiceRoutes = require("./routes/invoiceRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const messagingRoutes = require("./routes/messagingRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
+const testMockRoutes = require("./routes/testMockRoutes");
+const mockRouter = require("./routes/mockRoutes");
+const founderRoutes = require("./routes/founderRoutes");
+const quantumRoutes = require("./routes/quantumRoutes");
 const { receiveWhatsAppWebhook } = require("./controllers/webhookController");
 const { sendError } = require("./utils/response");
 const { errorHandler } = require("./utils/errorHandler");
@@ -41,8 +53,14 @@ app.get("/dashboard", (req, res) => res.redirect(302, "/console/dashboard"));
 
 app.use("/dashboard", express.static(path.join(__dirname, "..", "dashboard")));
 const consoleDist = path.join(__dirname, "..", "wros-frontend", "dist");
-app.use("/console", express.static(consoleDist));
+app.use("/console", express.static(consoleDist, { redirect: false }));
+// Serve the SPA entry for every client-side console route; React Router handles the path.
 app.use("/console", (req, res, next) => {
+  if (req.method !== "GET") return next();
+  return res.sendFile(path.join(consoleDist, "index.html"));
+});
+app.use("/founder", express.static(consoleDist, { redirect: false }));
+app.use("/founder", (req, res, next) => {
   if (req.method !== "GET") return next();
   return res.sendFile(path.join(consoleDist, "index.html"));
 });
@@ -51,7 +69,7 @@ app.get("/faults", (req, res) => {
 });
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/auth/login", "/api/auth/register", "/api/ai"], rateLimiter);
+app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/auth/login", "/api/auth/signin", "/api/auth/register", "/api/ai"], rateLimiter);
 
 const apiRouter = express.Router();
 
@@ -59,22 +77,28 @@ apiRouter.use("/", authRoutes);
 apiRouter.use("/", businessRoutes);
 apiRouter.use("/", billingRoutes);
 apiRouter.use("/", aiRoutes);
-apiRouter.use("/", adminRoutes);
 apiRouter.use("/", whatsappRoutes);
 apiRouter.use("/", messagingRoutes);
 apiRouter.use("/", settingsRoutes);
+apiRouter.use("/", testMockRoutes);
 apiRouter.use("/", systemRoutes);
 apiRouter.use("/", healthRoutes);
 apiRouter.use("/", productRoutes);
 if (config.ORDERS_ENABLED) apiRouter.use("/", orderRoutes);
 apiRouter.use("/", customerRoutes);
 apiRouter.use("/", reportRoutes);
+apiRouter.use("/", categoryRoutes);
+apiRouter.use("/", notificationRoutes);
 if (config.DOWNLOADS_ENABLED) apiRouter.use("/", downloadRoutes);
 if (config.FAULTS_ENABLED) apiRouter.use("/", faultRoutes);
 if (config.CRM_ENABLED) apiRouter.use("/", crmRoutes);
 if (config.INVOICES_ENABLED) apiRouter.use("/", invoiceRoutes);
 if (config.DELIVERY_ENABLED) apiRouter.use("/", deliveryRoutes);
+apiRouter.use("/", adminRoutes);
+apiRouter.use("/", founderRoutes);
+apiRouter.use("/", quantumRoutes);
 
+app.use("/api/mock", mockRouter);
 app.use("/api", apiRouter);
 
 app.get('/api/docs', (req, res) => {
@@ -235,4 +259,8 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;

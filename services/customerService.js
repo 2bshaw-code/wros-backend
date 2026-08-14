@@ -12,13 +12,16 @@ const createCustomer = async (tenantId, payload) => {
   }
 };
 
-const listCustomers = async (tenantId, { page = 1, limit = 20, search = "" } = {}) => {
+const listCustomers = async (tenantId, { page = 1, limit = 20, search = "", name = "", phone = "", email = "", address = "" } = {}) => {
   try {
     const query = { tenantId };
 
     if (search) {
       const regex = { $regex: escapeRegex(search), $options: "i" };
       query.$or = [{ name: regex }, { email: regex }, { phone: regex }];
+    }
+    for (const [field, value] of Object.entries({ name, phone, email, address })) {
+      if (value) query[field] = { $regex: escapeRegex(value), $options: "i" };
     }
 
     const safeLimit = Math.max(Number(limit) || 20, 1);

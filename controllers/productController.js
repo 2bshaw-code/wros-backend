@@ -5,6 +5,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  adjustStock,
 } = require("../services/productService");
 
 const listProducts = async (req, res) => {
@@ -62,10 +63,13 @@ const removeProduct = async (req, res) => {
   }
 };
 
+const adjustProductStock = async (req, res) => { try { return sendSuccess(res, await adjustStock(req.tenantId, req.params.id, req.body?.adjustment, req.body?.threshold)); } catch (error) { return sendError(res, error.message, 400); } };
+
 module.exports = {
   listProducts,
   getProduct,
   addProduct,
   editProduct,
   removeProduct,
+  adjustProductStock,
 };

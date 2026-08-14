@@ -1,5 +1,5 @@
 const { sendSuccess, sendError } = require("../utils/response");
-const { generateCustomerInvoice, sendInvoice, getInvoice, listCustomerInvoices } = require("../services/merchantInvoiceService");
+const { generateCustomerInvoice, createItemizedInvoice, editItemizedInvoice, sendInvoice, getInvoice, listCustomerInvoices } = require("../services/merchantInvoiceService");
 
 const planFromRequest = (req) => {
   if (!req.user?.plan?.features) throw new Error("Merchant console plan is required");
@@ -13,6 +13,16 @@ const generate = async (req, res) => {
   } catch (error) {
     sendError(res, error.message, 403);
   }
+};
+
+const create = async (req, res) => {
+  try { return sendSuccess(res, await createItemizedInvoice({ businessId: req.tenantId, customerId: req.body?.customerId, items: req.body?.items, tax: req.body?.tax, status: req.body?.status }, planFromRequest(req)), 201); }
+  catch (error) { return sendError(res, error.message, 400); }
+};
+
+const edit = async (req, res) => {
+  try { return sendSuccess(res, await editItemizedInvoice(req.tenantId, req.params.id, req.body || {}, planFromRequest(req))); }
+  catch (error) { return sendError(res, error.message, 400); }
 };
 
 const send = async (req, res) => {
@@ -42,4 +52,4 @@ const customer = async (req, res) => {
   }
 };
 
-module.exports = { generate, send, get, customer };
+module.exports = { generate, create, edit, send, get, customer };

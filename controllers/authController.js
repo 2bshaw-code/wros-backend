@@ -36,6 +36,7 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  console.info(`[auth] sign-in request reached: ${req.method} ${req.originalUrl}`);
   try {
     const result = await loginAdmin(req.body);
     sendSession(req, res, result, 200);
@@ -64,9 +65,12 @@ const refresh = async (req, res) => {
   }
 };
 
+const me = (req, res) => sendSuccess(res, req.user, 200);
+
 module.exports = {
   register,
   login,
   consoleSignIn,
   refresh,
+  me,
 };
