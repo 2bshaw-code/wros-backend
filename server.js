@@ -37,6 +37,7 @@ const mockRouter = require("./routes/mockRoutes");
 const founderRoutes = require("./routes/founderRoutes");
 const quantumRoutes = require("./routes/quantumRoutes");
 const ownerRoutes = require("./routes/ownerRoutes");
+const internalRoleRoutes = require("./routes/internalRoleRoutes");
 const { receiveWhatsAppWebhook } = require("./controllers/webhookController");
 const { sendError } = require("./utils/response");
 const { errorHandler } = require("./utils/errorHandler");
@@ -71,10 +72,11 @@ app.get("/faults", (req, res) => {
 });
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/auth/login", "/api/auth/signin", "/api/auth/register", "/api/ai"], rateLimiter);
+app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/auth/login", "/api/auth/signin", "/api/auth/register", "/api/ai", "/api/internal/assign-role"], rateLimiter);
 
 const apiRouter = express.Router();
 
+apiRouter.use("/", internalRoleRoutes);
 apiRouter.use("/", authRoutes);
 apiRouter.use("/", businessRoutes);
 apiRouter.use("/", billingRoutes);
