@@ -19,7 +19,7 @@ const adminUserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "merchant", "operator", "manager", "tenant_admin", "analyst", "admin", "owner", "founder_admin", "customer"],
+      enum: ["user", "merchant", "operator", "manager", "tenant_admin", "analyst", "admin", "owner", "founder", "founder_admin", "customer"],
       default: "merchant",
     },
     refreshTokenHash: {

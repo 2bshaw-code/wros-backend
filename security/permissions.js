@@ -4,6 +4,7 @@ const defaultRoles = {
   admin: ['read', 'write', 'delete', 'manage_users', 'manage_security', 'manage_tenants'],
   owner: ['read', 'manage_users', 'manage_tenants'],
   founder_admin: ['read', 'write', 'delete', 'manage_users', 'manage_security', 'manage_tenants'],
+  founder: ['read', 'write', 'delete', 'manage_users', 'manage_security', 'manage_tenants'],
   merchant: ['read', 'write', 'manage_tenant', 'manage_catalog'],
   operator: ['read', 'write', 'manage_own_session'],
   tenant_admin: ['read', 'write', 'manage_tenant', 'manage_catalog'],

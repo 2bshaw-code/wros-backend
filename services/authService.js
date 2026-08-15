@@ -90,7 +90,7 @@ const loginAdmin = async ({ email, password }) => {
 };
 
 const resolveConsoleRole = (role) => {
-  if (role === "founder_admin") return "founder_admin";
+  if (role === "founder" || role === "founder_admin") return "founder_admin";
   if (role === "owner") return "owner";
   if (role === "admin") return "admin";
   if (role === "manager") return "tenant_admin";
