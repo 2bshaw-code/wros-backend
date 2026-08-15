@@ -45,6 +45,7 @@ const app = express();
 let server;
 
 app.use(morgan("dev"));
+app.options(/.*/, cors(config.cors));
 app.use(cors(config.cors));
 app.use(express.json({ limit: "1mb", verify: (req, res, buffer) => { req.rawBody = buffer; } }));
 
