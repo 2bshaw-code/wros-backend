@@ -125,7 +125,7 @@ app.get('/api/docs/:name/pdf', (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  const publicWebsite = config.FRONTEND_URL || "https://wros-frontend.onrender.com";
+  const publicWebsite = process.env.PUBLIC_WEBSITE_URL || "https://wros-frontend.onrender.com";
   try {
     return res.redirect(302, new URL(publicWebsite).origin);
   } catch {
