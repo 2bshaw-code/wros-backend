@@ -1,6 +1,5 @@
 const coreRequired = [
   "JWT_REFRESH_SECRET",
-  "MONGO_URI_PROD",
   "HOSTING_URL",
   "CONSOLE_URL",
   "API_URL",
@@ -35,6 +34,10 @@ const requiredProduction = [
 const missingProduction = requiredProduction.filter(
   (variable) => !process.env[variable]
 );
+
+if (!process.env.MONGO_URI_PROD && !process.env.MONGO_URI) {
+  missingProduction.push("MONGO_URI_PROD or MONGO_URI");
+}
 
 if (missingProduction.length > 0) {
   throw new Error(

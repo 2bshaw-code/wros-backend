@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
-const { MONGO_URI, NODE_ENV } = require("./env");
+const { NODE_ENV } = require("./env");
+const mongoUri = process.env.MONGO_URI_PROD || process.env.MONGO_URI;
 
 const connectMongo = async () => {
-  if (!MONGO_URI) throw new Error("MONGO_URI is not defined");
+  if (!mongoUri) throw new Error("MONGO_URI is not defined");
   let lastError;
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     try {
-      await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000, maxPoolSize: 20, retryWrites: true });
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000, maxPoolSize: 20, retryWrites: true });
       console.log("MongoDB connected successfully");
       return mongoose.connection;
     } catch (error) {
