@@ -204,8 +204,9 @@ const startServer = async () => {
   try {
     await connectMongo();
 
-    server = app.listen(config.port, () => {
-      console.log(`Server running at http://localhost:${config.port}`);
+    const PORT = process.env.PORT || 3000;
+    server = app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
       console.log("Active routes (all prefixed with /api):");
       console.log("- POST /auth/register");
       console.log("- POST /auth/login");
