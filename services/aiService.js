@@ -12,6 +12,67 @@ const BOB_PERSONALITY = {
 
 const withBobTone = (reply) => `${BOB_PERSONALITY.opener} ${reply} ${BOB_PERSONALITY.signoff}`;
 
+const CLOUD_TASK_PATTERNS = [
+  /\b(generate|create|produce|render|edit)\b.{0,40}\b(video|image|media|document|pdf|presentation)\b/i,
+  /\b(advanced reasoning|deep analysis|multi[- ]step|workflow|automate|automation)\b/i,
+  /\b(plan|execute|coordinate)\b.{0,40}\b(workflow|campaign|automation)\b/i,
+];
+
+const sanitizeContext = (context = {}) => {
+  let pageUrl = "";
+  try {
+    const parsed = new URL(String(context.pageUrl || context.url || ""));
+    pageUrl = `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    pageUrl = String(context.pageUrl || context.url || "").split(/[?#]/)[0];
+  }
+
+  return {
+    pageUrl: pageUrl.slice(0, 500),
+    pageTitle: normalizeText(context.pageTitle).slice(0, 200),
+    sectionHeading: normalizeText(context.sectionHeading).slice(0, 200),
+    consoleType: normalizeText(context.consoleType).slice(0, 50),
+    actionContext: normalizeText(context.actionContext).slice(0, 200),
+  };
+};
+
+const requiresCloudEngine = (prompt, context = {}) => {
+  const routingText = [prompt, context.actionContext, context.sectionHeading, context.pageTitle].filter(Boolean).join(" ");
+  return CLOUD_TASK_PATTERNS.some((pattern) => pattern.test(routingText));
+};
+
+const redactSensitiveText = (value) => normalizeText(value)
+  .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email redacted]")
+  .replace(/\+?\d[\d\s().-]{7,}\d/g, "[phone redacted]")
+  .replace(/\b(?:bearer\s+)?[A-Za-z0-9_-]{24,}\b/gi, "[token redacted]");
+
+const askCloudEngine = async ({ prompt, context }) => {
+  const endpoint = normalizeText(process.env.BOB_CLOUD_URL);
+  if (!endpoint) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.BOB_CLOUD_TIMEOUT_MS || 8000));
+
+  try {
+    const headers = { "Content-Type": "application/json" };
+    if (process.env.BOB_CLOUD_API_KEY) headers.Authorization = `Bearer ${process.env.BOB_CLOUD_API_KEY}`;
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ prompt: redactSensitiveText(prompt), context, assistant: "BOB" }),
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+    const body = await response.json();
+    const reply = normalizeText(body.reply || body.response || body.data?.reply);
+    return reply ? { reply: withBobTone(reply) } : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const recognizeProduct = async ({ tenantId, image, payload = {} }) => {
   if (!tenantId) throw new Error("Tenant context is required");
   const name = payload.name || "AI Recognized Product";
@@ -278,7 +339,7 @@ const getInventoryInsights = async (tenantId) => {
   };
 };
 
-const askBob = async ({ prompt = "", userId = "", tenantId, operatorId }) => {
+const askLocalBob = async ({ prompt = "", userId = "", tenantId, operatorId, context = {} }) => {
   if (!tenantId) throw new Error("Tenant context is required");
   const normalized = normalizeText(prompt);
   if (!normalized) {
@@ -286,6 +347,31 @@ const askBob = async ({ prompt = "", userId = "", tenantId, operatorId }) => {
   }
 
   const intent = normalized.toLowerCase();
+  const pageContext = sanitizeContext(context);
+
+  if (/^(hi|hello|hey|good morning|good afternoon|good evening)\b/i.test(normalized)) {
+    return { reply: withBobTone(`Hello! I can help with ${pageContext.sectionHeading || pageContext.pageTitle || "WROS"}, navigation, documentation, support, legal guidance, and everyday console questions.`) };
+  }
+
+  if (/\b(where|navigate|navigation|open|find|go to)\b/i.test(normalized)) {
+    return { reply: withBobTone(`You are in ${pageContext.sectionHeading || pageContext.pageTitle || "WROS"}. Use the visible navigation to move between the dashboard, catalog, orders, customers, messages, settings, and available founder tools.`) };
+  }
+
+  if (/\b(docs?|documentation|support|help article|legal|privacy|cookie|terms|gdpr|compliance)\b/i.test(normalized)) {
+    return { reply: withBobTone(`I can explain the current ${pageContext.sectionHeading || pageContext.pageTitle || "WROS"} information and help you identify the next relevant action without retaining personal data.`) };
+  }
+
+  if (/\b(wros|operating system|console|owner|merchant|admin|founder)\b/i.test(normalized)) {
+    return { reply: withBobTone(`This ${pageContext.consoleType || "WROS"} surface supports the tools available on the current page. Ask about the visible section or the action you want to complete.`) };
+  }
+
+  if (/\b(how do i|what can you do|guide me|explain this page)\b/i.test(normalized)) {
+    return { reply: withBobTone(`I can guide you through ${pageContext.sectionHeading || pageContext.pageTitle || "this WROS page"} and explain the actions currently available.`) };
+  }
+
+  if (requiresCloudEngine(normalized, pageContext)) {
+    return { reply: withBobTone("I can help structure that task now. Share the intended output, source material, constraints, and approval steps, and I will turn it into a clear, actionable workflow.") };
+  }
 
   if (intent.includes("product description")) {
     const productName = normalized.replace(/.*product description(?: for)?/i, "").trim() || "this product";
@@ -319,6 +405,19 @@ const askBob = async ({ prompt = "", userId = "", tenantId, operatorId }) => {
   return { reply: withBobTone(generated.reply), tenantId, operatorId };
 };
 
+const askBob = async (input = {}) => {
+  const prompt = normalizeText(input.prompt);
+  if (!prompt) throw new Error("A prompt is required");
+  const context = sanitizeContext(input.context);
+
+  if (requiresCloudEngine(prompt, context)) {
+    const cloudReply = await askCloudEngine({ prompt, context });
+    if (cloudReply) return cloudReply;
+  }
+
+  return askLocalBob({ ...input, prompt, context });
+};
+
 module.exports = {
   recognizeProduct,
   scanShelf,
@@ -327,5 +426,9 @@ module.exports = {
   translateText,
   getAnalyticsOverview,
   generateInventoryReport,
+  requiresCloudEngine,
+  sanitizeContext,
+  redactSensitiveText,
+  askLocalBob,
   askBob,
 };

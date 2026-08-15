@@ -57,7 +57,7 @@ const createSession = async (user) => {
   };
 };
 
-const registerAdmin = async ({ email, password, role = "user" }) => {
+const registerAdmin = async ({ email, password, role = "merchant" }) => {
   const existingUser = await AdminUser.findOne({ email });
   if (existingUser) {
     throw new Error("Admin user already exists");
@@ -90,8 +90,11 @@ const loginAdmin = async ({ email, password }) => {
 };
 
 const resolveConsoleRole = (role) => {
+  if (role === "founder_admin") return "founder_admin";
+  if (role === "owner") return "owner";
   if (role === "admin") return "admin";
   if (role === "manager") return "tenant_admin";
+  if (role === "merchant") return "tenant_admin";
   return "operator";
 };
 

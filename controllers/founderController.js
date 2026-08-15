@@ -46,16 +46,18 @@ const configSummary = (req, res) => sendSuccess(res, {
 
 const bobAsk = (req, res) => {
   const prompt = req.body?.prompt || "";
-  actionLog.push({ action: "bob-ask", operatorId: req.user.id, prompt, mode: config.WROS_TEST_MODE ? "test" : config.NODE_ENV, timestamp: new Date().toISOString(), status: "accepted" });
+  actionLog.push({ action: "bob-ask", operatorId: req.user.id, mode: config.WROS_TEST_MODE ? "test" : config.NODE_ENV, timestamp: new Date().toISOString(), status: "accepted" });
   return sendSuccess(res, {
   prompt,
   reply: `Founder engineering response for: ${prompt || "system status"}`,
   context: {
     health: { backend: "UP", database: mongoose.connection.readyState === 1 ? "connected" : "disconnected" },
     logs: actionLog.slice(-10),
+    metrics: { uptime: process.uptime(), memory: process.memoryUsage(), mongodbState: mongoose.connection.readyState },
     config: { mode: config.WROS_TEST_MODE ? "TEST" : config.NODE_ENV, apiUrl: config.API_URL },
-    routes: ["/founder", "/founder/system", "/founder/logs", "/console"],
-    recentDeploy: { version: "wros-dev-build", hash: "wros-dev-build" },
+    routes: ["/", "/auth/login", "/auth/signup", "/console/merchant", "/console/owner", "/founder", "/founder/system", "/founder/logs", "/founder/deployments"],
+    buildSummary: { frontend: "wros-frontend/dist", backend: "wros-backend/server.js", status: "build-ready" },
+    recentDeploy: { version: "wros-dev-build", hash: "wros-dev-build", status: "configured" },
   },
   structured: { intent: "founder_engineering", confidence: 1, actions: ["inspect", "report"] },
   });

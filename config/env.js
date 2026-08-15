@@ -1,4 +1,5 @@
 const coreRequired = [
+  "JWT_SECRET",
   "JWT_REFRESH_SECRET",
   "HOSTING_URL",
   "CONSOLE_URL",

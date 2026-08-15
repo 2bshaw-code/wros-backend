@@ -36,6 +36,7 @@ const testMockRoutes = require("./routes/testMockRoutes");
 const mockRouter = require("./routes/mockRoutes");
 const founderRoutes = require("./routes/founderRoutes");
 const quantumRoutes = require("./routes/quantumRoutes");
+const ownerRoutes = require("./routes/ownerRoutes");
 const { receiveWhatsAppWebhook } = require("./controllers/webhookController");
 const { sendError } = require("./utils/response");
 const { errorHandler } = require("./utils/errorHandler");
@@ -98,6 +99,7 @@ if (config.DELIVERY_ENABLED) apiRouter.use("/", deliveryRoutes);
 apiRouter.use("/", adminRoutes);
 apiRouter.use("/", founderRoutes);
 apiRouter.use("/", quantumRoutes);
+apiRouter.use("/", ownerRoutes);
 
 app.use("/api/mock", mockRouter);
 app.use("/api", apiRouter);
@@ -123,14 +125,12 @@ app.get('/api/docs/:name/pdf', (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: "ok",
-      message: "WROS backend running",
-      timestamp: new Date().toISOString(),
-    },
-  });
+  const publicWebsite = config.FRONTEND_URL || "https://wros-frontend.onrender.com";
+  try {
+    return res.redirect(302, new URL(publicWebsite).origin);
+  } catch {
+    return res.redirect(302, "https://wros-frontend.onrender.com");
+  }
 });
 
 app.get("/version", (req, res) => {
@@ -202,10 +202,10 @@ const gracefulShutdown = async (signal) => {
 };
 
 const startServer = async () => {
-  try {
-    await connectMongo();
+  const PORT = process.env.PORT || 3000;
+  const safeStartup = String(process.env.WROS_SAFE_STARTUP ?? "true").toLowerCase() !== "false";
 
-    const PORT = process.env.PORT || 3000;
+  try {
     server = app.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
       console.log("Active routes (all prefixed with /api):");
@@ -252,6 +252,14 @@ const startServer = async () => {
       console.log("- GET /whatsapp/messages/:customerId");
       console.log("- GET /reports/sales, /reports/top-products, /reports/customer-segments, /reports/inventory, /reports/summary");
     });
+
+    try {
+      await connectMongo();
+    } catch (error) {
+      console.error("MongoDB startup error:", error.message);
+      if (!safeStartup) throw error;
+      console.warn("WROS safe startup is active; HTTP routes remain available while MongoDB is offline.");
+    }
 
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

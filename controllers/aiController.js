@@ -67,7 +67,7 @@ const analyticsOverview = async (req, res) => {
 
 const ask = async (req, res) => {
   try {
-    const result = await askBob({ prompt: req.body?.prompt, userId: req.body?.userId || req.user?.id, tenantId: req.tenantId, operatorId: req.user.id });
+    const result = await askBob({ prompt: req.body?.prompt, context: req.body?.context, userId: req.body?.userId || req.user?.id, tenantId: req.tenantId, operatorId: req.user.id });
     sendSuccess(res, { reply: result.reply, tenantId: req.tenantId, operatorId: req.user.id }, 200);
   } catch (error) {
     sendError(res, error.message, 400);
