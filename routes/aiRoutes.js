@@ -43,7 +43,7 @@ router.post("/ai/ask", authMiddleware, (req, res, next) => {
   req.tenantId = req.user?.tenantId || req.user?.businessId || null;
   return next();
 }, ask);
-router.use(authMiddleware, requireTenant);
+router.use("/ai", authMiddleware, requireTenant);
 router.post("/ai/product/recognize", productRecognize);
 router.post("/ai/shelf/scan", shelfScan);
 router.post("/ai/whatsapp/reply", whatsappReply);

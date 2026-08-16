@@ -16,7 +16,7 @@ const { requireTenant } = require("../middleware/tenantMiddleware");
 const router = express.Router();
 
 router.post("/billing/webhook", webhook);
-router.use(authMiddleware, requireTenant);
+router.use("/billing", authMiddleware, requireTenant);
 router.get("/billing/plans", listPlansHandler);
 router.post("/billing/create-customer", createCustomer);
 router.post("/billing/create-subscription", createSubscriptionRoute);
