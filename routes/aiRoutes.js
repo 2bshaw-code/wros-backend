@@ -39,13 +39,16 @@ const uploadImage = (req, res, next) => imageUpload.single("image")(req, res, (e
   return next();
 });
 
+router.post("/ai/ask", authMiddleware, (req, res, next) => {
+  req.tenantId = req.user?.tenantId || req.user?.businessId || null;
+  return next();
+}, ask);
 router.use(authMiddleware, requireTenant);
 router.post("/ai/product/recognize", productRecognize);
 router.post("/ai/shelf/scan", shelfScan);
 router.post("/ai/whatsapp/reply", whatsappReply);
 router.post("/ai/order/create", orderCreate);
 router.post("/ai/translate", translate);
-router.post("/ai/ask", ask);
 router.post("/ai/upload", uploadImage, uploadImageHandler);
 router.post("/ai/tts", tts);
 router.get("/ai/analytics/overview", analyticsOverview);
