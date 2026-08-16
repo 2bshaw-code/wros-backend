@@ -340,7 +340,6 @@ const getInventoryInsights = async (tenantId) => {
 };
 
 const askLocalBob = async ({ prompt = "", userId = "", tenantId, operatorId, context = {} }) => {
-  if (!tenantId) throw new Error("Tenant context is required");
   const normalized = normalizeText(prompt);
   if (!normalized) {
     throw new Error("A prompt is required");
@@ -379,6 +378,7 @@ const askLocalBob = async ({ prompt = "", userId = "", tenantId, operatorId, con
   }
 
   if (intent.includes("reorder")) {
+    if (!tenantId) return { reply: withBobTone("Reorder insights require a merchant workspace. Open a merchant tenant before requesting catalog-specific recommendations.") };
     const insights = await getInventoryInsights(tenantId);
     const suggestions = insights.reorderSuggestions.slice(0, 5);
     return { reply: withBobTone(suggestions.length
@@ -387,6 +387,7 @@ const askLocalBob = async ({ prompt = "", userId = "", tenantId, operatorId, con
   }
 
   if (intent.includes("sales") || intent.includes("summarise")) {
+    if (!tenantId) return { reply: withBobTone("Sales insights require a merchant workspace. Open a merchant tenant before requesting transaction-specific analysis.") };
     const overview = await getAnalyticsOverview(tenantId);
     return { reply: withBobTone(`Sales summary: ${overview.orderTrends.totalOrders} recent orders with revenue of ${overview.orderTrends.revenue}. ${overview.inventoryReport.headline}`) };
   }
@@ -401,6 +402,7 @@ const askLocalBob = async ({ prompt = "", userId = "", tenantId, operatorId, con
     return { reply: withBobTone(`WhatsApp ${scenario} template: ${templates[scenario]}`) };
   }
 
+  if (!tenantId) return { reply: withBobTone(`I can help with ${pageContext.sectionHeading || pageContext.pageTitle || "Founder OS"}, system operations, Found IT, navigation, documentation, and control-plane workflows.`) };
   const generated = await generateReply({ tenantId, operatorId, text: normalized, customerName: userId || "Operator" });
   return { reply: withBobTone(generated.reply), tenantId, operatorId };
 };
