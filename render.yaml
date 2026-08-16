@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: wros-backend
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run migrate && npm run seed
+    startCommand: npm start
+    healthCheckPath: /ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: wros-postgres
+          property: connectionString
+      - key: FOUNDER_MASTER_SEED_ENABLED
+        value: "true"
+      - key: FOUNDER_MASTER_EMAIL
+        value: bobby@founder.master
+      - key: FOUNDER_MASTER_PASSWORD
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: HOSTING_URL
+        sync: false
+      - key: CONSOLE_URL
+        sync: false
+      - key: API_URL
+        sync: false
+
+databases:
+  - name: wros-postgres
+    plan: starter
+    databaseName: wros
+    user: wros

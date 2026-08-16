@@ -4,6 +4,15 @@
   "description": "Backend service for wros",
   "main": "server.js",
   "scripts": {
+    "prestart": "npm run migrate && npm run seed",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed-founder-master.js",
+    "seed:founder-master": "node scripts/seed-founder-master.js",
+    "foundit:migrate": "node scripts/foundit-migrate.js",
+    "foundit:test": "node --test foundit/tests/*.test.js",
+    "auth:test": "node --test auth/*.test.js",
+    "test": "npm run auth:test && npm run foundit:test",
+    "foundit:seed-test": "node scripts/seed-foundit-tester.js",
     "migrate:tenants": "node scripts/migrate-tenants.js",
     "validate:production-env": "node scripts/validate-production-env.js",
     "mongo:test": "node scripts/test-mongo-connection.js",
@@ -21,6 +30,7 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cheerio": "^1.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -31,6 +41,11 @@
     "mongoose": "^9.9.2",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
+    "node-cron": "^4.6.0",
+    "pg": "^8.23.0",
+    "playwright-core": "^1.62.1",
+    "robots-parser": "^3.0.1",
+    "rss-parser": "^3.13.0",
     "stripe": "^22.5.0"
   }
 }

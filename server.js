@@ -1,8 +1,13 @@
-const express = require("express");
-const path = require("path");
-const dotenv = require("dotenv");
+require("dotenv").config();
 
-dotenv.config({ path: process.env.DOTENV_CONFIG_PATH ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH) : path.join(__dirname, ".env") });
+const path = require("path");
+
+if (process.env.DOTENV_CONFIG_PATH) {
+  require("dotenv").config({ path: path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH) });
+}
+
+const PORT = process.env.PORT || 8080;
+const express = require("express");
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -38,6 +43,11 @@ const founderRoutes = require("./routes/founderRoutes");
 const quantumRoutes = require("./routes/quantumRoutes");
 const ownerRoutes = require("./routes/ownerRoutes");
 const internalRoleRoutes = require("./routes/internalRoleRoutes");
+const foundItRoutes = require("./foundit/routes");
+const { startFoundItScheduler, stopFoundItScheduler } = require("./foundit/scheduler");
+const { close: closeFoundItDatabase } = require("./foundit/db");
+const { seedFounderMaster } = require("./services/founderMasterService");
+const { migrate: migrateAuth, close: closeAuthDatabase } = require("./auth/db");
 const { receiveWhatsAppWebhook } = require("./controllers/webhookController");
 const { sendError } = require("./utils/response");
 const { errorHandler } = require("./utils/errorHandler");
@@ -72,11 +82,12 @@ app.get("/faults", (req, res) => {
 });
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/auth/login", "/api/auth/signin", "/api/auth/register", "/api/ai", "/api/internal/assign-role"], rateLimiter);
+app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register", "/api/business/init", "/api/auth/login", "/api/auth/signin", "/api/auth/register", "/api/ai", "/api/internal/assign-role", "/api/foundit"], rateLimiter);
 
 const apiRouter = express.Router();
 
 apiRouter.use("/", internalRoleRoutes);
+apiRouter.use("/", foundItRoutes);
 apiRouter.use("/", authRoutes);
 apiRouter.use("/", businessRoutes);
 apiRouter.use("/", billingRoutes);
@@ -192,6 +203,9 @@ const gracefulShutdown = async (signal) => {
   }
 
   try {
+    stopFoundItScheduler();
+    await closeAuthDatabase();
+    await closeFoundItDatabase();
     const mongoose = require("mongoose");
     if (mongoose.connection.readyState !== 0) {
       await mongoose.connection.close();
@@ -204,56 +218,11 @@ const gracefulShutdown = async (signal) => {
 };
 
 const startServer = async () => {
-  const PORT = process.env.PORT || 3000;
   const safeStartup = String(process.env.WROS_SAFE_STARTUP ?? "true").toLowerCase() !== "false";
 
   try {
-    server = app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-      console.log("Active routes (all prefixed with /api):");
-      console.log("- POST /auth/register");
-      console.log("- POST /auth/login");
-      console.log("- POST /business/register");
-      console.log("- POST /business/whatsapp/connect");
-      console.log("- GET /business/settings");
-      console.log("- PUT /business/settings");
-      console.log("- POST /billing/create-customer");
-      console.log("- POST /billing/create-subscription");
-      console.log("- POST /billing/webhook");
-      console.log("- POST /ai/product/recognize");
-      console.log("- POST /ai/shelf/scan");
-      console.log("- POST /ai/whatsapp/reply");
-      console.log("- POST /ai/order/create");
-      console.log("- POST /ai/translate");
-      console.log("- GET /ai/analytics/overview");
-      console.log("- GET /status");
-      console.log("- GET /health");
-      console.log("- GET /version");
-      console.log("- GET /ready");
-      console.log("- GET /products");
-      console.log("- GET /products/:id");
-      console.log("- POST /products");
-      console.log("- PUT /products/:id");
-      console.log("- DELETE /products/:id");
-      console.log("- GET /orders");
-      console.log("- GET /orders/:id");
-      console.log("- POST /orders");
-      console.log("- PUT /orders/:id");
-      console.log("- PATCH /orders/:id/status");
-      console.log("- GET /customers");
-      console.log("- POST /customers");
-      console.log("- PUT /customers/:id");
-      console.log("- GET /customers/:id");
-      console.log("- GET /customers/:id/orders");
-      console.log("- GET /customers/phone/:phone");
-      console.log("- GET /admin/overview");
-      console.log("- GET /admin/products");
-      console.log("- GET /admin/orders");
-      console.log("- GET /admin/customers");
-      console.log("- POST /whatsapp/incoming");
-      console.log("- GET /whatsapp/messages/:customerId");
-      console.log("- GET /reports/sales, /reports/top-products, /reports/customer-segments, /reports/inventory, /reports/summary");
-    });
+    await migrateAuth();
+    await seedFounderMaster();
 
     try {
       await connectMongo();
@@ -262,6 +231,13 @@ const startServer = async () => {
       if (!safeStartup) throw error;
       console.warn("WROS safe startup is active; HTTP routes remain available while MongoDB is offline.");
     }
+
+    server = app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+      console.log("Active routes: /api/auth, /api/business, /api/founder, /api/foundit");
+    });
+
+    startFoundItScheduler().catch((error) => console.error("Found IT scheduler startup failed:", error.message));
 
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

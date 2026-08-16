@@ -4,6 +4,7 @@ const {
   connectBusinessWhatsapp,
   getSettings,
   updateSettings,
+  initialize,
 } = require("../controllers/businessController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const { requireTenant } = require("../middleware/tenantMiddleware");
@@ -11,6 +12,7 @@ const { requireTenant } = require("../middleware/tenantMiddleware");
 const router = express.Router();
 
 router.post("/business/register", register);
+router.post("/business/init", authMiddleware, initialize);
 router.use(authMiddleware, requireTenant);
 router.post("/business/whatsapp/connect", connectBusinessWhatsapp);
 router.get("/business/settings", getSettings);

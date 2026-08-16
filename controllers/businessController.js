@@ -4,7 +4,23 @@ const {
   connectWhatsapp,
   getBusinessSettings,
   updateBusinessSettings,
+  initializeMerchantWorkspace,
 } = require("../services/businessService");
+
+const initialize = async (req, res) => {
+  try {
+    const business = await initializeMerchantWorkspace(req.user, req.body || {});
+    sendSuccess(res, {
+      business,
+      tenantId: business._id.toString(),
+      businessId: business._id.toString(),
+      workspaceConnected: business.workspaceConnected,
+    }, 200);
+  } catch (error) {
+    const status = error.message === "Merchant role is required" ? 403 : 400;
+    sendError(res, error.message, status);
+  }
+};
 
 const register = async (req, res) => {
   try {
@@ -43,6 +59,7 @@ const updateSettings = async (req, res) => {
 };
 
 module.exports = {
+  initialize,
   register,
   connectBusinessWhatsapp,
   getSettings,

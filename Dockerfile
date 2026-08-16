@@ -3,5 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
 COPY . .
-EXPOSE 3000
+ENV PORT=$PORT
+ENV MONGO_URI=$MONGO_URI
+ENV JWT_SECRET=$JWT_SECRET
+EXPOSE 8080
 CMD ["node", "server.js"]

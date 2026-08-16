@@ -16,6 +16,13 @@ const businessSchema = new mongoose.Schema(
     licenseToken: { type: String, default: "" },
     messageCount: { type: Number, default: 0 },
     messageRateCents: { type: Number, default: 5 },
+    workspaceConnected: { type: Boolean, default: false },
+    workspace: { type: mongoose.Schema.Types.Mixed, default: {} },
+    systemProfile: { type: mongoose.Schema.Types.Mixed, default: {} },
+    whatsappConnection: { type: mongoose.Schema.Types.Mixed, default: {} },
+    hostingUrl: { type: String, default: "" },
+    consoleUrl: { type: String, default: "" },
+    apiUrl: { type: String, default: "" },
   },
   { timestamps: true }
 );

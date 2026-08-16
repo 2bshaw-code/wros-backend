@@ -1,4 +1,48 @@
 const Business = require("../models/Business");
+const config = require("../config");
+
+const merchantWorkspaceRoles = new Set(["merchant", "manager", "tenant_admin"]);
+
+const getDefaultName = (email) => {
+  const localPart = String(email).split("@")[0].replace(/[._-]+/g, " ").trim();
+  return localPart.replace(/\b\w/g, (character) => character.toUpperCase()) || "Merchant";
+};
+
+const initializeMerchantWorkspace = async (user, payload = {}) => {
+  const email = String(user?.email || "").trim().toLowerCase();
+  if (!email) throw new Error("Authenticated merchant email is required");
+  if (!merchantWorkspaceRoles.has(user?.role)) throw new Error("Merchant role is required");
+
+  const ownerName = String(payload.ownerName || getDefaultName(email)).trim();
+  const businessName = String(payload.businessName || `${ownerName} Business`).trim();
+  const now = new Date();
+
+  return Business.findOneAndUpdate(
+    { email },
+    {
+      $setOnInsert: {
+        email,
+        ownerName,
+        businessName,
+        phone: String(payload.phone || "").trim(),
+        whatsappNumber: "",
+        subscriptionPlan: "starter",
+        subscriptionStatus: "trial",
+        status: "active",
+      },
+      $set: {
+        workspaceConnected: true,
+        workspace: { status: "ready", initializedAt: now },
+        systemProfile: { status: "ready", initializedAt: now },
+        whatsappConnection: { status: "placeholder", connected: false },
+        hostingUrl: config.HOSTING_URL,
+        consoleUrl: config.CONSOLE_URL,
+        apiUrl: config.API_URL,
+      },
+    },
+    { returnDocument: "after", upsert: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+};
 
 const getBusiness = async (tenantId) => {
   const business = await Business.findById(tenantId);
@@ -80,6 +124,7 @@ const updateBusinessSettings = async (tenantId, payload = {}) => {
 };
 
 module.exports = {
+  initializeMerchantWorkspace,
   registerBusiness,
   connectWhatsapp,
   getBusinessSettings,
