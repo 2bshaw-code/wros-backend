@@ -86,8 +86,8 @@ app.use(["/api/status", "/api/health", "/api/whatsapp", "/api/business/register"
 const apiRouter = express.Router();
 
 apiRouter.use("/", internalRoleRoutes);
-apiRouter.use("/", foundItRoutes);
 apiRouter.use("/", authRoutes);
+apiRouter.use("/", foundItRoutes);
 apiRouter.use("/", businessRoutes);
 apiRouter.use("/", billingRoutes);
 apiRouter.use("/", aiRoutes);
