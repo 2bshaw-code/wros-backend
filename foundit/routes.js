@@ -4,7 +4,7 @@ const { authMiddleware } = require("../middleware/authMiddleware");
 const { requireFoundItPermission } = require("./permissions");
 
 const router = express.Router();
-router.use(authMiddleware);
+router.use("/foundit", authMiddleware);
 router.get("/foundit/status", requireFoundItPermission("view"), controller.status);
 router.get("/foundit/listings", requireFoundItPermission("view"), controller.listings);
 router.get("/foundit/merchants", requireFoundItPermission("view"), controller.merchants);
