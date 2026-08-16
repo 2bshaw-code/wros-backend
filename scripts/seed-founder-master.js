@@ -1,7 +1,7 @@
 const path = require("path");
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH ? path.resolve(process.cwd(), process.env.DOTENV_CONFIG_PATH) : path.join(__dirname, "..", ".env") });
 
-const { migrate, close } = require("../auth/db");
+const mongoose = require("mongoose");
 const { seedFounderMaster } = require("../services/founderMasterService");
 
 const main = async () => {
@@ -10,7 +10,8 @@ const main = async () => {
     return;
   }
 
-  await migrate();
+  const { connectMongo } = require("../config/mongo");
+  await connectMongo();
   const result = await seedFounderMaster();
   if (!result.seeded) throw new Error("Founder master account was not seeded");
   console.log(`Founder master seed verified for ${result.email}`);
@@ -21,4 +22,4 @@ main()
     console.error(`Founder master seed failed: ${error.message}`);
     process.exitCode = 1;
   })
-  .finally(close);
+  .finally(async () => { if (mongoose.connection.readyState !== 0) await mongoose.connection.close(); });

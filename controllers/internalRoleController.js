@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const userRepository = require("../auth/userRepository");
+const AdminUser = require("../models/AdminUser");
 const { sendSuccess, sendError } = require("../utils/response");
 
 const allowedRoles = new Set(["founder_admin", "owner", "merchant"]);
@@ -24,7 +24,11 @@ const assignRole = async (req, res) => {
   if (!allowedRoles.has(role)) return sendError(res, "Invalid role", 400);
 
   try {
-    const user = await userRepository.assignRole(email, role);
+    const user = await AdminUser.findOneAndUpdate(
+      { email },
+      { $set: { role, founder: role === "founder_admin", refreshTokenHash: "", refreshTokenId: "" } },
+      { returnDocument: "after", runValidators: true }
+    );
 
     if (!user) return sendError(res, "User not found", 404);
     return sendSuccess(res, {

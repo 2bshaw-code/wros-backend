@@ -47,7 +47,6 @@ const foundItRoutes = require("./foundit/routes");
 const { startFoundItScheduler, stopFoundItScheduler } = require("./foundit/scheduler");
 const { close: closeFoundItDatabase } = require("./foundit/db");
 const { seedFounderMaster } = require("./services/founderMasterService");
-const { migrate: migrateAuth, close: closeAuthDatabase } = require("./auth/db");
 const { receiveWhatsAppWebhook } = require("./controllers/webhookController");
 const { sendError } = require("./utils/response");
 const { errorHandler } = require("./utils/errorHandler");
@@ -204,7 +203,6 @@ const gracefulShutdown = async (signal) => {
 
   try {
     stopFoundItScheduler();
-    await closeAuthDatabase();
     await closeFoundItDatabase();
     const mongoose = require("mongoose");
     if (mongoose.connection.readyState !== 0) {
@@ -221,11 +219,9 @@ const startServer = async () => {
   const safeStartup = String(process.env.WROS_SAFE_STARTUP ?? "true").toLowerCase() !== "false";
 
   try {
-    await migrateAuth();
-    await seedFounderMaster();
-
     try {
       await connectMongo();
+      await seedFounderMaster();
     } catch (error) {
       console.error("MongoDB startup error:", error.message);
       if (!safeStartup) throw error;

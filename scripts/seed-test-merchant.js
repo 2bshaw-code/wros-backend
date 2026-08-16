@@ -7,8 +7,7 @@ dotenv.config({ path: process.env.DOTENV_CONFIG_PATH || path.join(__dirname, "..
 const mongoose = require("mongoose");
 const { connectMongo } = require("../config/mongo");
 const Business = require("../models/Business");
-const authDb = require("../auth/db");
-const userRepository = require("../auth/userRepository");
+const AdminUser = require("../models/AdminUser");
 
 const TEST_MERCHANT = {
   ownerName: "WROS Test Operator",
@@ -19,7 +18,6 @@ const TEST_MERCHANT = {
 
 const main = async () => {
   await connectMongo({ retries: 3, delayMs: 500 });
-  await authDb.migrate();
 
   const business = await Business.findOneAndUpdate(
     { email: TEST_MERCHANT.email },
@@ -41,11 +39,11 @@ const main = async () => {
   );
 
   const passwordHash = await bcrypt.hash(TEST_MERCHANT.password, 10);
-  const user = await userRepository.upsertUser({ email: TEST_MERCHANT.email, passwordHash, role: "manager" });
+  const user = await AdminUser.findOneAndUpdate({ email: TEST_MERCHANT.email }, { $set: { passwordHash, role: "manager" } }, { returnDocument: "after", upsert: true, setDefaultsOnInsert: true });
 
   console.log(JSON.stringify({
     businessId: business._id.toString(),
-    userId: user.id,
+    userId: user._id.toString(),
     email: TEST_MERCHANT.email,
     password: TEST_MERCHANT.password,
     operatorRole: "tenant_admin",
@@ -59,5 +57,4 @@ main()
   })
   .finally(async () => {
     if (mongoose.connection.readyState !== 0) await mongoose.connection.close();
-    await authDb.close();
   });

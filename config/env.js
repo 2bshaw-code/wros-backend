@@ -1,5 +1,4 @@
 const coreRequired = [
-  "DATABASE_URL",
   "JWT_SECRET",
   "JWT_REFRESH_SECRET",
   "HOSTING_URL",

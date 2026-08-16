@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
-const userRepository = require("../auth/userRepository");
+const AdminUser = require("../models/AdminUser");
 const Business = require("../models/Business");
 const { initializeMerchantWorkspace } = require("./businessService");
 const config = require("../config");
@@ -12,7 +12,7 @@ const JWT_SECRET = config.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = config.REFRESH_TOKEN_SECRET;
 
 const toUser = (user) => ({
-  id: user.id,
+  id: user._id,
   email: user.email,
   role: user.role,
   founder: user.founder,
@@ -35,7 +35,7 @@ const createAccessToken = (claims) => jwt.sign(claims, JWT_SECRET, { expiresIn: 
 const createRefreshToken = (user) => {
   const jti = crypto.randomUUID();
   const token = jwt.sign(
-    { id: user.id, email: user.email, type: "refresh", jti },
+    { id: user._id, email: user.email, type: "refresh", jti },
     REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
   );
@@ -45,7 +45,9 @@ const createRefreshToken = (user) => {
 
 const createSession = async (user) => {
   const { token: refreshToken, jti } = createRefreshToken(user);
-  await userRepository.updateSession(user.id, { refreshTokenHash: await bcrypt.hash(refreshToken, 10), refreshTokenId: jti });
+  user.refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  user.refreshTokenId = jti;
+  await user.save();
 
   const requiresMerchant = user.role === "merchant" || user.role === "manager" || user.role === "tenant_admin" || user.role === "operator";
   if (user.role === "merchant") await initializeMerchantWorkspace(user);
@@ -60,17 +62,17 @@ const createSession = async (user) => {
 };
 
 const registerAdmin = async ({ email, password, role = "merchant" }) => {
-  const existingUser = await userRepository.findByEmail(email);
+  const existingUser = await AdminUser.findOne({ email });
   if (existingUser) {
     throw new Error("Admin user already exists");
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  return createSession(await userRepository.createUser({ email, passwordHash, role }));
+  return createSession(await AdminUser.create({ email, passwordHash, role }));
 };
 
 const loginAdmin = async ({ email, password }) => {
-  const user = await userRepository.findByEmail(email);
+  const user = await AdminUser.findOne({ email });
   if (!user) {
     throw new Error("Invalid email or password");
   }
@@ -94,7 +96,7 @@ const resolveConsoleRole = (role) => {
 };
 
 const loginConsoleOperator = async ({ email, password }) => {
-  const user = await userRepository.findByEmail(email);
+  const user = await AdminUser.findOne({ email: String(email || "").toLowerCase().trim() });
   if (!user || user.role === "customer") {
     throw new Error("Invalid console email or password");
   }
@@ -126,7 +128,9 @@ const loginConsoleOperator = async ({ email, password }) => {
   };
 
   const { token: refreshToken, jti } = createRefreshToken(user);
-  await userRepository.updateSession(user.id, { refreshTokenHash: await bcrypt.hash(refreshToken, 10), refreshTokenId: jti });
+  user.refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+  user.refreshTokenId = jti;
+  await user.save();
 
   return {
     token: jwt.sign(claims, JWT_SECRET, { expiresIn: "1h" }),
@@ -147,7 +151,7 @@ const refreshSession = async (refreshToken) => {
     throw new Error("Invalid refresh token");
   }
 
-  const user = await userRepository.findById(decoded.id);
+  const user = await AdminUser.findById(decoded.id);
   if (!user || !user.refreshTokenHash || decoded.jti !== user.refreshTokenId || !(await bcrypt.compare(refreshToken, user.refreshTokenHash))) {
     throw new Error("Refresh token revoked or invalid");
   }

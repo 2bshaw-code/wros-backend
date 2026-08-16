@@ -4,7 +4,7 @@ Found IT is a standalone PostgreSQL-backed circular-commerce service managed thr
 
 ## Founder master account
 
-Founder OS, WROS authentication, and Found IT use the shared PostgreSQL `users` table from `DATABASE_URL`. MongoDB remains the WROS tenant/business store and is not used for login identities. To synchronize the break-glass Founder account before startup, configure:
+Founder OS, WROS authentication, and Found IT use the shared MongoDB `AdminUser` collection selected by `MONGO_URI_PROD` or `MONGO_URI`. To synchronize the break-glass Founder account before startup, configure:
 
 - `FOUNDER_MASTER_SEED_ENABLED=true`
 - `FOUNDER_MASTER_EMAIL=bobby@founder.master`
@@ -12,10 +12,9 @@ Founder OS, WROS authentication, and Found IT use the shared PostgreSQL `users` 
 
 The password is bcrypt-hashed and never logged. The account receives `founder_master` control-plane access to Founder OS and Found IT. Tenant-scoped merchant APIs still require an explicit authenticated tenant context; the role does not bypass tenant isolation.
 
-The `prestart` npm lifecycle runs `npm run migrate && npm run seed` before `server.js`. When seeding is enabled, a failed database connection or failed upsert stops startup. The Render build command is also `npm install && npm run migrate && npm run seed`; start remains `npm start`. For local testing, put the values in an ignored `.env` or export them in the shell, then run:
+The `prestart` npm lifecycle runs `npm run seed` before `server.js`. When seeding is enabled, a failed MongoDB connection or failed upsert stops startup. Render builds with `npm install`; start remains `npm start`. For local testing, put the values in an ignored `.env` or export them in the shell, then run:
 
 ```bash
-npm run migrate
 npm run seed
 npm start
 ```
@@ -24,8 +23,7 @@ Open `http://localhost:5173/auth/login`, sign in with the configured Founder mas
 
 ## Runtime configuration
 
-- `DATABASE_URL`: shared Render PostgreSQL connection for `users` and the `FOUND_IT` schema.
-- `FOUND_IT_DATABASE_URL`: optional separate Found IT override; normally leave unset.
+- `FOUND_IT_DATABASE_URL`: optional PostgreSQL connection for the standalone Found IT data schema.
 - `FOUND_IT_SCHEDULER_ENABLED=true`: enables hourly scraping.
 - `FOUND_IT_CRON`: optional cron expression, default `0 * * * *`.
 - `FOUND_IT_TIMEZONE`: defaults to `Europe/London`.
@@ -36,14 +34,15 @@ Open `http://localhost:5173/auth/login`, sign in with the configured Founder mas
 - `FOUND_IT_THROTTLE_MS`: delay between listing writes, default `750`.
 - `FOUND_IT_PLATFORM_THROTTLE_MS`: delay between platforms, default `1500`.
 
-Run `npm run migrate` before first use. It creates the shared `users` table plus the quoted PostgreSQL schema `FOUND_IT` and platform definitions.
+Run `npm run foundit:migrate` before first use. It creates the quoted PostgreSQL schema `FOUND_IT` and platform definitions.
 
-Verify the master identity without selecting its hash value:
+Verify the master identity in MongoDB without returning its hash value:
 
-```sql
-SELECT email, role, founder, password_hash LIKE '$2%' AS bcrypt_hashed
-FROM users
-WHERE email = 'bobby@founder.master';
+```js
+db.adminusers.findOne(
+	{ email: "bobby@founder.master" },
+	{ email: 1, role: 1, founder: 1 }
+)
 ```
 
 Freecycle regional feed URLs must be entered in the platform `config.feedUrls` array. Playwright and HTML selectors can be changed per platform through `config.selectors`. Found IT checks `robots.txt`; operators remain responsible for platform terms, rate limits, API licensing, and personal-data obligations.

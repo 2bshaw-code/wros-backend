@@ -9,7 +9,7 @@ const handle = (operation, status = 200) => async (req, res) => {
 };
 
 module.exports = {
-  status: handle(async () => ({ company: "Found IT", database: process.env.FOUND_IT_DATABASE_URL || process.env.DATABASE_URL ? "configured" : "not configured", scheduler: process.env.FOUND_IT_SCHEDULER_ENABLED === "true" ? "enabled" : "disabled" })),
+  status: handle(async () => ({ company: "Found IT", database: process.env.FOUND_IT_DATABASE_URL ? "configured" : "not configured", scheduler: process.env.FOUND_IT_SCHEDULER_ENABLED === "true" ? "enabled" : "disabled" })),
   migrate: handle(async () => { await migrate(); return { migrated: true }; }),
   platforms: handle(() => repository.listPlatforms()),
   merchants: handle((req) => repository.listMerchants(req.query)),
