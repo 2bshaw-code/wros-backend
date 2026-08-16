@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "prestart": "npm run seed",
+    "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed-founder-master.js",
     "seed:founder-master": "node scripts/seed-founder-master.js",
     "foundit:migrate": "node scripts/foundit-migrate.js",
